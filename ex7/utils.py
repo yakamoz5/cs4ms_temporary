@@ -90,21 +90,19 @@ def load_dermamnist(batch_size=128, download=True):
     norm_std = [0.229, 0.224, 0.225]
 
     data_transform_train = transforms.Compose([
-        transforms.Resize((28, 28)),
         transforms.RandomRotation(20),
         transforms.ToTensor(),
         transforms.Normalize(norm_mean, norm_std)
     ])
 
     data_transform_val_test = transforms.Compose([
-        transforms.Resize((28, 28)),
         transforms.ToTensor(),
         transforms.Normalize(norm_mean, norm_std)
     ])
 
-    train_dataset = DermaMNIST(split='train', transform=data_transform_train, download=download)
-    val_dataset = DermaMNIST(split='val', transform=data_transform_val_test, download=download)
-    test_dataset = DermaMNIST(split='test', transform=data_transform_val_test, download=download)
+    train_dataset = DermaMNIST(split='train', transform=data_transform_train, download=download, size=28)
+    val_dataset = DermaMNIST(split='val', transform=data_transform_val_test, download=download, size=28)
+    test_dataset = DermaMNIST(split='test', transform=data_transform_val_test, download=download, size=28)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
     val_loader = torch.utils.data.DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
