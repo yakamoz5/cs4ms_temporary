@@ -19,10 +19,12 @@ import random
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-def plot_sample_images(label_dict: dict):
+def plot_sample_images():
     """
     Plots one original DermaMNIST image per class (no augmentation/resize transforms).
     """
+    info = medmnist.INFO['dermamnist']
+    label_dict = info['label']
     class_indices = sorted(int(k) for k in label_dict.keys())
     samples_by_class = {}
 
@@ -73,11 +75,6 @@ def plot_sample_images(label_dict: dict):
 
     plt.tight_layout()
     plt.show()
-
-
-def plot_sample_image(data_loader_or_label_dict, label_dict=None, split='all', download=True):
-    """Alias for plot_sample_images."""
-    plot_sample_images(data_loader_or_label_dict, label_dict=label_dict, split=split, download=download)
 
 
 # ---------------------------------------------------------
