@@ -1,10 +1,12 @@
 import os
+from xml.parsers.expat import model
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 import torchvision.transforms as transforms
 from torchvision.models import resnet18, ResNet18_Weights
 import medmnist
@@ -137,11 +139,24 @@ def get_small_train_loader(train_dataset, num_samples=50, batch_size=10, seed=42
 # 2. MODEL BUILDING
 # ---------------------------------------------------------
 def get_model(num_classes=7):
-    """Returns a pre-trained ResNet18 modified for our 7 skin lesion classes."""
-    model = resnet18(weights=None)
-    # Replace the final classification layer
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, num_classes)
+    """Returns a pre-trained ResNet18 with a frozen backbone and a multi-layer classification head."""
+    # 1. Load the pre-trained model
+    model = resnet18(weights=ResNet18_Weights.DEFAULT)
+    
+    # 2. Freeze the backbone
+    for param in model.parameters():
+        param.requires_grad = False
+        
+    # 3. Build the new Non-Linear Classification Head
+    num_ftrs = model.fc.in_features  # For ResNet-18, this is 512
+    hidden_dim = num_ftrs * 2        # Double the dimension to 1024
+    
+    # ugly hack to replace the final layer with a non-linear head
+    model.fc = nn.Sequential(
+        nn.Linear(num_ftrs, hidden_dim),
+        nn.GELU(),
+        nn.Linear(hidden_dim, num_classes)
+    )
     return model.to(DEVICE)
 
 # ---------------------------------------------------------
@@ -163,7 +178,8 @@ def train_model(model, train_loader, val_loader, train_dataset, epochs=3, learni
         criterion = nn.CrossEntropyLoss()
         print("Training WITHOUT class weights.")
 
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    trainable_params = [p for p in model.parameters() if p.requires_grad]
+    optimizer = optim.AdamW(trainable_params, lr=learning_rate, weight_decay=0.01)
 
     for epoch in range(epochs):
         model.train()
